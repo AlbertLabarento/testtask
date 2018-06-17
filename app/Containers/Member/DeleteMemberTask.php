@@ -29,7 +29,7 @@ class DeleteMemberTask extends MemberTask
     public function run() : DeleteMemberTask
     {
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $member */
-        $this->member = app()->make( FindMemberTask::class, [ 'listId' => $this->listId ] )->run( $this->memberId );
+        $this->member = ( new FindMemberTask( $this->listId, $this->entityManager, $this->repository ) )->run($this->memberId);
         
         if ($errors = $this->member->hasErrors()) {
             $this->errors = $errors;

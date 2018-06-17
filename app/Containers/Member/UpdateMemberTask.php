@@ -20,20 +20,20 @@ class UpdateMemberTask extends MemberTask
         string $memberId,
         EntityManagerInterface $entityManager,
         \App\Database\Entities\MailChimp\MailChimpListMember $repository,
-        \Mailchimp\Mailchimp $mailChimp,
+        \MailChimp\MailChimp $mailChimp,
         \App\Containers\Services\EntityValidator $validator
     ) {
         parent::__construct("lists/$listId/members/$memberId", $entityManager, $repository);
         $this->memberId = $memberId;
         $this->listId = $listId;
-        $this->mailChimp = $mailChimp;
         $this->validator = $validator;
+        $this->mailChimp = $mailChimp;
     }
 
     public function run( array $request ) : UpdateMemberTask
     {
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $member */
-        $this->findMember = app()->make( FindMemberTask::class, [ 'listId' => $this->listId ] )->run( $this->memberId );
+        $this->findMember = ( new FindMemberTask( $this->listId, $this->entityManager, $this->repository ) )->run($this->memberId);
         
         if ($errors = $this->findMember->hasErrors()) {
             $this->errors = $errors;

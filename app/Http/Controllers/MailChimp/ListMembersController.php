@@ -14,6 +14,7 @@ use App\Containers\Member\GetMembersTask;
 use App\Containers\Member\CreateMemberTask;
 use App\Containers\Member\DeleteMemberTask;
 use App\Containers\Member\FindMemberTask;
+use App\Containers\Member\FindMemberRevised;
 use App\Containers\Member\UpdateMemberTask;
 use App\Containers\Services\EntityValidator;
 
@@ -24,28 +25,38 @@ class ListMembersController extends Controller
      */
     private $mailChimp;
 
+    private $mailChimpMember;
+
+    private $entityValidator;
+
     /**
      * ListsController constructor.
      *
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
      * @param \Mailchimp\Mailchimp $mailchimp
      */
-    public function __construct(EntityManagerInterface $entityManager, Mailchimp $mailchimp)
+    public function __construct(
+        EntityManagerInterface $entityManager, 
+        Mailchimp $mailChimp, 
+        \App\Database\Entities\MailChimp\MailChimpListMember $mailChimpMember,
+        \App\Containers\Services\EntityValidator $entityValidator)
     {
         parent::__construct($entityManager);
 
-        $this->mailChimp = $mailchimp;
+        $this->mailChimp = $mailChimp;
+        $this->mailChimpMember = $mailChimpMember;
+        $this->entityValidator = $entityValidator;
     }
 
     public function getList(Request $request, string $listId ) : JsonResponse
     {
-        $getMembersTask = $this->execute( GetMembersTask::class, [ 'listId' => $listId ] )->run();
+        $getMembersTask = ( new GetMembersTask( $listId, $this->entityManager, $this->mailChimpMember ) )->run();
         return $this->successfulListResponse( $getMembersTask );
     }
 
     public function create(Request $request, string $listId) : JsonResponse
     {
-        $member = $this->execute( CreateMemberTask::class, [ 'listId' => $listId ] )->run( $request->all() );
+        $member = ( new CreateMemberTask( $listId, $this->entityManager, $this->mailChimpMember, $this->entityValidator, $this->mailChimp ) )->run( $request->all() );
         
         if( $errors = $member->hasErrors() )
             return $this->errorResponse( $errors );
@@ -56,7 +67,7 @@ class ListMembersController extends Controller
 
     public function remove(string $listId, string $memberId) : JsonResponse
     {
-        $member = $this->execute( DeleteMemberTask::class, [ 'listId' => $listId, 'memberId' => $memberId ] )->run();
+        $member = ( new DeleteMemberTask( $listId, $memberId, $this->entityManager, $this->mailChimpMember, $this->mailChimp ) )->run();
 
         if( $errors = $member->hasErrors() )
             return $this->errorResponse( $errors );
@@ -74,8 +85,7 @@ class ListMembersController extends Controller
     public function show(string $listId, string $memberId): JsonResponse
     {
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $member */
-        // $member = $this->entityManager->getRepository(MailChimpListMember::class)->find($memberId);
-        $member = $this->execute(   FindMemberTask::class, [ 'listId' => $listId ] )->run( $memberId );
+        $member = ( new FindMemberTask( $listId, $this->entityManager, $this->mailChimpMember ) )->run($memberId);
         
         if ($errors = $member->hasErrors() ) {
             return $this->errorResponse(
@@ -100,7 +110,7 @@ class ListMembersController extends Controller
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $list */
         
         try {
-            $updateMember = $this->execute( UpdateMemberTask::class, [ 'listId' => $listId, 'memberId' => $memberId ] )->run( $request->all() );
+            $updateMember = ( new UpdateMemberTask( $listId, $memberId, $this->entityManager, $this->mailChimpMember, $this->mailChimp, $this->entityValidator ) )->run( $request->all() );
         
             if ($errors = $updateMember->hasErrors() ) {
                 return $this->errorResponse(

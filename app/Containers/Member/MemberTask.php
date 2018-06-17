@@ -21,7 +21,7 @@ abstract class MemberTask
     public function __construct(
         $resourceName,
         \Doctrine\ORM\EntityManagerInterface $entityManager,
-        Entity $repository
+        \App\Database\Entities\MailChimp\MailChimpListMember $repository
     )
     {
         $this->resourceName = $resourceName;

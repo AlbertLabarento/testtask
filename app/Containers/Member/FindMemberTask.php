@@ -24,7 +24,7 @@ class FindMemberTask extends MemberTask
             return $this;
         }
         
-        
+
         return $this;
     }
 }
