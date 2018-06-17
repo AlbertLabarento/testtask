@@ -20,7 +20,7 @@ class DeleteMemberTask extends MemberTask
         \App\Database\Entities\MailChimp\MailChimpListMember $repository,
         \Mailchimp\Mailchimp $mailChimp
     ) {
-        parent::__construct("list/$listId/members/$memberId", $entityManager, $repository);
+        parent::__construct($entityManager, $repository, $mailChimp);
         $this->memberId = $memberId;
         $this->listId = $listId;
         $this->mailChimp = $mailChimp;
@@ -29,8 +29,10 @@ class DeleteMemberTask extends MemberTask
     public function run() : DeleteMemberTask
     {
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $member */
-        $this->member = ( new FindMemberTask( $this->listId, $this->entityManager, $this->repository ) )->run($this->memberId);
+        $this->member = ( new FindMemberTask( $this->listId, $this->entityManager, $this->repository, $this->mailChimp ) )->run($this->memberId);
         
+        $list = $this->getListRepository()->find(  $this->listId  );
+
         if ($errors = $this->member->hasErrors()) {
             $this->errors = $errors;
             return $this;
@@ -39,7 +41,7 @@ class DeleteMemberTask extends MemberTask
         try {
             // Remove list from MailChimp
             $memberId = $this->member->getMemberEntity()->getMailChimpId();
-            $this->mailChimp->delete("lists/$this->listId/members/$memberId");
+            $this->mailChimp->delete( $this->getResourceUrl( $list->getMailChimpId() , $memberId ) );
             // Remove list from database
             $this->removeEntity($this->member->getMemberEntity());
         } catch (Exception $exception) {

@@ -3,6 +3,7 @@
 namespace App\Containers\Member;
 
 use App\Database\Entities\Entity;
+use App\Database\Entities\MailChimp\MailChimpList;
 
 abstract class MemberTask 
 {
@@ -16,17 +17,21 @@ abstract class MemberTask
 
     protected $listId;
 
+    protected $memberId;
+
     protected $member;
 
+    protected $mailChimp;
+
     public function __construct(
-        $resourceName,
         \Doctrine\ORM\EntityManagerInterface $entityManager,
-        \App\Database\Entities\MailChimp\MailChimpListMember $repository
+        \App\Database\Entities\MailChimp\MailChimpListMember $repository,
+        \Mailchimp\Mailchimp $mailChimp
     )
     {
-        $this->resourceName = $resourceName;
         $this->entityManager = $entityManager;
         $this->repository = $repository;
+        $this->mailChimp = $mailChimp;
     }
 
     public function getList() : array
@@ -83,5 +88,35 @@ abstract class MemberTask
     public function getMemberEntity()
     {
         return $this->member;
+    }
+
+    protected function validateResource( string $listId, string $memberId = null )
+    {
+        if( is_null( $this->getListRepository()->find( $listId ) ) )
+            throw new \App\Containers\Exceptions\ListNotFoundException( $listId );
+        
+        if( $memberId )
+            if(  is_null( $this->getRepository( MailChimpList::class )->find( $memberId ) ) )
+                throw new \App\Containers\Exceptions\MemberNotFoundException( $memberId );
+    }
+
+    public function getListRepository() : \Doctrine\ORM\EntityRepository 
+    {
+        return $this->entityManager->getRepository( MailChimpList::class );
+    }
+
+    public function validateList()
+    {
+
+    }
+
+    public function validateMember()
+    {
+
+    }
+
+    public function getResourceUrl( string $listId, string $memberId = null ) : string
+    {
+        return \sprintf('lists/%s/members/%s', $listId, $memberId);
     }
 }

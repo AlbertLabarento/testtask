@@ -12,8 +12,6 @@ class CreateMemberTask extends MemberTask
 {
     private $validator;
 
-    private $mailChimp;
-
     public function __construct(
         string $listId,
         EntityManagerInterface $entityManager,
@@ -21,7 +19,7 @@ class CreateMemberTask extends MemberTask
         EntityValidator $validator,
         Mailchimp $mailChimp
     ) {
-        parent::__construct("lists/$listId/members", $entityManager, $repository);
+        parent::__construct($entityManager, $repository, $mailChimp);
         $this->validator = $validator;
         $this->mailChimp = $mailChimp;
         $this->listId = $listId;
@@ -29,7 +27,11 @@ class CreateMemberTask extends MemberTask
 
     public function run(array $member) : CreateMemberTask
     {
+        $this->validateResource( $this->listId );
+
         $this->member = parent::createMember($this->repository, $member);
+
+        $list = $this->getListRepository()->find(  $this->listId  );
 
         if( $this->errors = $this->validator->hasError( $this->member ) )
             return $this;
@@ -38,7 +40,7 @@ class CreateMemberTask extends MemberTask
             // Save list into db
             $this->saveEntity($this->member);
             // Save list into MailChimp
-            $response = $this->mailChimp->post($this->resourceName, $this->member->toMailChimpArray());
+            $response = $this->mailChimp->post($this->getResourceUrl( $list->getMailChimpId() ), $this->member->toMailChimpArray());
             // Set MailChimp id on the list and save list into db
             $this->saveEntity($this->member->setMailChimpId($response->get('id')));
         } catch (Exception $exception) {

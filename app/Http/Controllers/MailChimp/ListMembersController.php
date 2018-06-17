@@ -50,7 +50,7 @@ class ListMembersController extends Controller
 
     public function getList(Request $request, string $listId ) : JsonResponse
     {
-        $getMembersTask = ( new GetMembersTask( $listId, $this->entityManager, $this->mailChimpMember ) )->run();
+        $getMembersTask = ( new GetMembersTask( $listId, $this->entityManager, $this->mailChimpMember, $this->mailChimp ) )->run();
         return $this->successfulListResponse( $getMembersTask );
     }
 
@@ -85,7 +85,7 @@ class ListMembersController extends Controller
     public function show(string $listId, string $memberId): JsonResponse
     {
         /** @var \App\Database\Entities\MailChimp\MailChimpListMember|null $member */
-        $member = ( new FindMemberTask( $listId, $this->entityManager, $this->mailChimpMember ) )->run($memberId);
+        $member = ( new FindMemberTask( $listId, $this->entityManager, $this->mailChimpMember, $this->mailChimp ) )->run($memberId);
         
         if ($errors = $member->hasErrors() ) {
             return $this->errorResponse(

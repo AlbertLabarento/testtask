@@ -78,16 +78,16 @@ abstract class ListMemberTestCase extends WithDatabaseTestCase
     public function tearDown(): void
     {
         /** @var Mailchimp $mailChimp */
-        $mailChimp = $this->app->make(Mailchimp::class);
+        // $mailChimp = $this->app->make(Mailchimp::class);
 
         foreach ($this->createdMemberIds as $listId => $memberId) {
             // Delete list on MailChimp after test
-            $mailChimp->delete("lists/$listId/members/$memberId");
+            $this->delete("/mailchimp/lists/$listId/members/$memberId");
         }
 
         foreach ($this->createdListIds as $listId) {
             // Delete list on MailChimp after test
-            $mailChimp->delete(\sprintf('lists/%s', $listId));
+            $this->delete(\sprintf('mailchimp/lists/%s', $listId));
         }
 
         parent::tearDown();
@@ -154,7 +154,14 @@ abstract class ListMemberTestCase extends WithDatabaseTestCase
     {
         $response = $this->post("/mailchimp/lists", static::$listData);
 
-        return \json_decode($this->response->getContent(), true)['mail_chimp_id'];
+        return \json_decode($this->response->getContent(), true)['list_id'];
+    }
+
+    public function getListDocId()
+    {
+        $response = $this->post("/mailchimp/lists", static::$listData);
+
+        return \json_decode($this->response->getContent(), true)['list_id'];
     }
 
     public function getMember()

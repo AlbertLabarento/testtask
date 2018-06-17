@@ -25,4 +25,24 @@ class Handler extends ExceptionHandler
             ValidationException::class
         ];
     }
+
+    public function render($request, Exception $e)
+    {
+        $exception = null;
+        if( $e instanceof \App\Containers\Exceptions\ListNotFoundException )
+            $exception = $e;
+        
+        if( $e instanceof \App\Containers\Exceptions\MemberListNotFoundException )
+            $exception = $e;
+
+        if( $exception )    
+            return \response()->json( [ 'message' => $e->getMessage() ] , 404);
+
+        return \response()->json( [ 'message' => $e->getMessage() ], 500 );
+    }
+
+    public function report(Exception $e)
+    {
+        return parent::report($e);
+    }
 }

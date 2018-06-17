@@ -9,13 +9,17 @@ class GetMembersTask extends MemberTask
     public function __construct(
         string $listId,
         EntityManagerInterface $entityManager,
-        \App\Database\Entities\MailChimp\MailChimpListMember $repository
+        \App\Database\Entities\MailChimp\MailChimpListMember $repository,
+        \Mailchimp\Mailchimp $mailChimp
     ) {
-        parent::__construct("list/$listId/members", $entityManager, $repository);
+        parent::__construct($entityManager, $repository, $mailChimp);
+        $this->listId = $listId;
     }
 
     public function run()
     {
+        $this->validateResource( $this->listId );
+
         return parent::getList();
     }
 }
